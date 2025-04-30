@@ -1,0 +1,207 @@
+#####################################################################################################################
+CART-SERVICE:
+#####################################################################################################################
+
+1>
+URL: /api/cart/update
+Method: PUT
+Desc: Update the existing items in the cart
+Request body: 
+{
+  "customerId": 8,
+  "productId": 2,
+  "quantity": 2
+}
+Response: "Cart updated successfully"
+
+2>
+URL: /api/cart/add
+Method: POST
+Desc: Add items in the cart
+Request body: 
+{
+  "customerId": 8,
+  "productId": 2,
+  "quantity": 1
+}
+
+Response: "Item added to the cart"
+
+3>
+URL: /api/cart/{customerId}
+Method: GET
+Desc: get the items from the cart for a customer
+Request body: 
+Response: 
+{
+    "customerId": 8,
+    "items": [
+        {
+            "productId": 3,
+            "name": "K20 Pro",
+            "price": 25000.0,
+            "quantity": 2
+        }
+    ]
+}
+
+4>
+URL: /api/cart/{customerId}
+Method: DELETE
+Desc: deletes all the items in the cart
+Request body: 
+Response: 
+"All items are cleared"
+
+
+5>
+URL: /api/cart/product
+Method: GET
+Desc: fetches a specific product from the cart
+Request body: 
+{
+  "customerId": 8,
+  "productId": 1,
+}
+Response: 
+{
+    "customerId": 8,
+    "items": [
+        {
+            "productId": 3,
+            "name": "K20 Pro",
+            "price": 25000.0,
+            "quantity": 2
+        }
+    ]
+}
+
+
+6>
+URL: /api/cart/remove
+Method: DELETE
+Desc: Deletes a specific product from the cart
+Request body:
+{
+  "customerId": 8,
+  "productId": 2,
+}
+Response:
+"Item removed successfully"
+
+
+
+#####################################################################################################################
+CUSTOMER-SERVICE
+#####################################################################################################################
+
+1>
+URL: /api/customers/register
+Method: POST
+Desc: Registers a new user
+Request body:
+{
+    "firstName" : "Amit",
+    "lastName" : "Roy",
+    "userName" : "amit",
+    "phnNo" : "1234567890",
+    "password" : "abcd1234",
+    "email" : "amit@gmail.com",
+    "role" : "USER",
+    "addressLine" : "West Bengal,Jalpaiguri",
+    "pin" : "735101"
+}
+Response:
+"User registered successfully"
+
+2>
+URL: /api/customers/login
+Method: POST
+Desc: Registered user logs in
+Request body:
+{
+    "username" : "momo",
+    "password" : "abcd1234"
+}
+Response:
+Received JWT token.
+
+3>
+URL: /api/customers/{id}
+Method: GET
+Desc: Fetches the specific customer details
+Request body:
+Response:
+{
+    "firstName": "Soumya",
+    "lastName": "Dev",
+    "userName": "momo",
+    "phnNo": "1234512345",
+    "email": "sourav.sinha@klizos.com",
+    "role": "USER",
+    "address": {
+        "id": 8,
+        "addressLine": "West Bengal,Siliguri",
+        "pin": "735102"
+    }
+}
+
+
+4>
+URL: /api/customers/admin/customers
+Method: GET
+Desc: Fetches the all the customers (ADMIN)
+Request body:
+Response:
+[
+{
+    "firstName": "Soumya",
+    "lastName": "Dev",
+    "userName": "momo",
+    "phnNo": "1234512345",
+    "email": "sourav.sinha@klizos.com",
+    "role": "USER",
+    "address": {
+        "id": 8,
+        "addressLine": "West Bengal,Siliguri",
+        "pin": "735102"
+    }
+}
+]
+
+5>
+URL: /api/customers/admin/customers/{id}
+Method: DELETE
+Desc: Remove a specific customer with customer id
+Request body:
+Response:
+"User account is removed successfully"
+
+6>
+URL: /api/customers/admin/customers/{id}
+Method: PUT
+Desc: Update customer details
+Request body:
+{
+    "firstName" : "Amit",
+    "lastName" : "Roy",
+    "userName" : "amit",
+    "phnNo" : "1234567890",
+    "email" : "amit@gmail.com",
+    "addressLine" : "West Bengal,Jalpaiguri",
+    "pin" : "735101"
+}
+Response:
+{
+    "firstName": "Amit",
+    "lastName": "Roy",
+    "userName": "amit",
+    "phnNo": "1234567890",
+    "email": "amit@gmail.com",
+    "role": "USER",
+    "address": {
+        "id": 8,
+        "addressLine": "West Bengal,Jalpaiguri",
+        "pin": "735101"
+    }
+}

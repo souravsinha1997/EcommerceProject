@@ -1,0 +1,66 @@
+#####################################################################################################################
+ORDER-SERVICE:
+#####################################################################################################################
+
+1>
+URL: /api/orders/{orderId}
+Method: GET
+Desc: Track order with order id
+Request body: 
+Response:
+{
+  "customerName": "string",
+  "orderId": 1073741824,
+  "status": "string",
+  "totalPrice": 0,
+  "orderDate": "2025-04-29T09:45:30.378Z",
+  "items": [
+    {
+      "productName": "string",
+      "quantity": 1073741824,
+      "price": 0
+    }
+  ]
+}
+
+
+2>
+URL: /api/orders/{orderId}
+Method: PUT
+Desc:  Cancel order with order id
+Request body: 
+Response:
+"Order canceled successfully with order id : 123"
+
+
+3>
+URL: /api/orders/{customerId}
+Method: POST
+Desc:  Place order with customer id
+Request body: 
+Response:
+"Please complete the payment for Order ID : 123"
+
+
+
+#####################################################################################################################
+PAYMENT-SERVICE:
+#####################################################################################################################
+
+1>
+URL: /api/payment/{paymentId}
+Method: POST
+Desc:  Completes the payment for the payment id
+Request body: 
+Response:
+"Payment successful for the Payment ID : 123"
+
+
+
+
+
+
+
+a. Once order is created it will send a notification asking to complete the payment.
+b. After submitting the payment it will send 2 notification, one for successful payment and one for successful order placement.
+c. If order is cancelled then it will again send 2 notification one for payment refund and one for order cancellation.
