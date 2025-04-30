@@ -1,0 +1,81 @@
+CREATE TABLE `user` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `first_name` varchar(255) NOT NULL,
+   `last_name` varchar(255) NOT NULL,
+   `user_name` varchar(255) NOT NULL,
+   `password` varchar(255) NOT NULL,
+   `phn_no` varchar(255) DEFAULT NULL,
+   `email` varchar(255) DEFAULT NULL,
+   `address_id` int DEFAULT NULL,
+   `role` varchar(50) DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `user_name` (`user_name`),
+   UNIQUE KEY `email` (`email`),
+   KEY `address_id` (`address_id`),
+   CONSTRAINT `user_ibfk_1` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`)
+ )
+ 
+ 
+ CREATE TABLE `address` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `address_line` varchar(255) NOT NULL,
+   `pin` varchar(255) NOT NULL,
+   PRIMARY KEY (`id`)
+ )
+ 
+ CREATE TABLE `orders` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `customer_id` int NOT NULL,
+   `total_price` decimal(38,2) NOT NULL,
+   `status` varchar(255) NOT NULL,
+   `order_date` datetime NOT NULL,
+   PRIMARY KEY (`id`)
+ )
+ 
+ 
+ CREATE TABLE `order_items` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `order_id` int NOT NULL,
+   `product_id` int NOT NULL,
+   `quantity` int NOT NULL,
+   `unit_price` decimal(38,2) NOT NULL,
+   PRIMARY KEY (`id`),
+   KEY `order_id` (`order_id`),
+   CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE
+ )
+ 
+ 
+ CREATE TABLE `payment` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `user_id` int NOT NULL,
+   `order_id` int NOT NULL,
+   `amount` decimal(10,2) NOT NULL,
+   `status` varchar(20) NOT NULL,
+   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+   `paid_at` datetime DEFAULT NULL,
+   PRIMARY KEY (`id`)
+ )
+ 
+ 
+ CREATE TABLE `category` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `name` varchar(255) DEFAULT NULL,
+   `description` varchar(255) DEFAULT NULL,
+   PRIMARY KEY (`id`)
+ ) 
+ 
+ 
+ 
+ CREATE TABLE `product` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `name` varchar(255) DEFAULT NULL,
+   `brand` varchar(255) DEFAULT NULL,
+   `quantity` int NOT NULL,
+   `price` double DEFAULT NULL,
+   `category_id` int DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   KEY `fk_category` (`category_id`),
+   CONSTRAINT `fk_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+ )
+ 
+ 

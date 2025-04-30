@@ -1,0 +1,200 @@
+PUT
+/api/products/stock-update/{id}
+Request body:
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+Responses:
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+PUT
+/api/products/admin/product/{id}
+
+Request body:
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+
+Responses:
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+DELETE
+/api/products/admin/product/{id}
+
+Request:
+
+Responses:
+"Successfully deleted product"
+
+///////////////////////////////////////////////////////////////////////////////
+
+POST
+/api/products/admin/product
+
+Request body:
+
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+Responses:
+"Registered new product"
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/products/{id}
+
+
+Responses:
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/products/product/{name}
+
+Responses
+{
+  "name": "string",
+  "brand": "string",
+  "price": 0.1,
+  "quantity": 1073741824,
+  "category": "string"
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/products/category/{category}
+
+Responses:
+[
+  {
+    "name": "string",
+    "brand": "string",
+    "price": 0.1,
+    "quantity": 1073741824,
+    "category": "string"
+  }
+]
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/products/all
+
+Responses:
+[
+  {
+    "name": "string",
+    "brand": "string",
+    "price": 0.1,
+    "quantity": 1073741824,
+    "category": "string"
+  }
+]
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+category-controller
+
+
+PUT
+/api/categories/admin/category/{id}
+
+Schema
+{
+  "name": "string",
+  "description": "string"
+}
+Responses:
+{
+  "name": "string",
+  "description": "string"
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+DELETE
+/api/categories/admin/category/{id}
+
+Responses:
+"Successfully removed the category"
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+POST
+/api/categories/admin/category
+
+Request body:
+{
+  "name": "string",
+  "description": "string"
+}
+Responses:
+"Successfully added new category"
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/categories/{id}
+
+Responses:
+{
+  "name": "string",
+  "description": "string"
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+GET
+/api/categories/all
+
+Responses:
+[
+  {
+    "name": "string",
+    "description": "string"
+  }
+]
