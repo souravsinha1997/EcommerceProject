@@ -52,7 +52,7 @@ public class CartService {
 		item.setPrice(product.getBody().getPrice());
 		item.setProductId(request.getProductId());
 		
-		if(product.getBody().getQuantity()<request.getQuantity() || request.getQuantity()<0) {
+		if(product.getBody().getQuantity()<request.getQuantity() || request.getQuantity()<=0) {
 			throw new RuntimeException("Invalid Quantity");
 		}
 		else {
