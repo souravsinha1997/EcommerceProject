@@ -1,5 +1,6 @@
 package com.ecommerce.order_service.service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +30,13 @@ import com.ecommerce.order_service.entity.dto.PaymentResponse;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.service.rabbitMQ.OrderPublisher;
 
+import com.rabbitmq.client.Channel;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderService {
 
@@ -132,44 +140,63 @@ public class OrderService {
 	
 	@RabbitListener(queues = RabbitMQConfig.PAYMENT_QUEUE)
 	@Transactional
-    public void receiveOrderMessage(@Payload PaymentResponse paymentResponse) {
-        int customerId = paymentResponse.getUserId();
-        int order_id = paymentResponse.getOrderId();
-        
-        Order savedOrder = orderRepo.findById(order_id).orElseThrow(()-> new RuntimeException("Invalid order no"));
-        if(paymentResponse.getStatus().equals("PAID")) {
-        	
-        	if(savedOrder.getStatus().equals("SUCCESS")) return;
-        	if(savedOrder.getStatus().equals("PENDING") && savedOrder.getCustomerId()==customerId) {
-        		savedOrder.setStatus("PAID");
-        	     List<OrderItem> orderItems = savedOrder.getOrderItems();  
-        	     for(OrderItem item : orderItems) {
-        	    	 ResponseEntity<ProductResponse> product = productClient.getProductById(item.getProductId());
-        	    	 int quantity = product.getBody().getQuantity() - item.getQuantity();
-        	    	 ProductRequest productRequest = new ProductRequest();
-        	    	 productRequest.setQuantity(quantity);
-        	    	 productClient.updateStock(productRequest,item.getProductId());
-        	     }
-        	}
-        	else {
-        		savedOrder.setStatus("FAILED");
-        	}
-        	orderRepo.save(savedOrder);
-        }    
-        
-        ResponseEntity<UserResponse> customer = customerClient.getUser(savedOrder.getCustomerId());	
-        
-        Notification notification = new Notification();
-        notification.setOrderId(savedOrder.getId());
-        notification.setStatus(savedOrder.getStatus());
-        notification.setAmount(savedOrder.getTotalPrice());
-        notification.setUserName(customer.getBody().getUserName());
-        notification.setUsermail(customer.getBody().getEmail());
-        
-        orderPublisher.sendOrderToNotificationQueue(notification);
-        
-     	System.out.println("Order placed successfully!");
-    }
+	public void receiveOrderMessage(@Payload PaymentResponse paymentResponse, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
+	    try {
+	        int customerId = paymentResponse.getUserId();
+	        int order_id = paymentResponse.getOrderId();
+
+	        Order savedOrder = orderRepo.findById(order_id)
+	                .orElseThrow(() -> new RuntimeException("Invalid order no"));
+
+	        if ("PAID".equals(paymentResponse.getStatus())) {
+
+	            if ("SUCCESS".equals(savedOrder.getStatus())) return;
+
+	            if ("PENDING".equals(savedOrder.getStatus()) && savedOrder.getCustomerId() == customerId) {
+	                savedOrder.setStatus("PAID");
+	                List<OrderItem> orderItems = savedOrder.getOrderItems();
+
+	                for (OrderItem item : orderItems) {
+	                    ResponseEntity<ProductResponse> product = productClient.getProductById(item.getProductId());
+	                    int quantity = product.getBody().getQuantity() - item.getQuantity();
+
+	                    ProductRequest productRequest = new ProductRequest();
+	                    productRequest.setQuantity(quantity);
+	                    productClient.updateStock(productRequest, item.getProductId());
+	                }
+	            } else {
+	                savedOrder.setStatus("FAILED");
+	            }
+
+	            orderRepo.save(savedOrder);
+	        }
+
+	        ResponseEntity<UserResponse> customer = customerClient.getUser(savedOrder.getCustomerId());
+
+	        Notification notification = new Notification();
+	        notification.setOrderId(savedOrder.getId());
+	        notification.setStatus(savedOrder.getStatus());
+	        notification.setAmount(savedOrder.getTotalPrice());
+	        notification.setUserName(customer.getBody().getUserName());
+	        notification.setUsermail(customer.getBody().getEmail());
+
+	        orderPublisher.sendOrderToNotificationQueue(notification);
+	        System.out.println("Order placed successfully!");
+
+	        // Acknowledge the message manually after successful processing
+	        channel.basicAck(tag, false);
+
+	    } catch (Exception e) {
+	        // Log the error and reject the message without requeueing
+	        System.err.println("Error processing message: " + e.getMessage());
+	        try {
+	            channel.basicReject(tag, false); // false = do not requeue
+	        } catch (IOException ioException) {
+	            System.err.println("Error rejecting message: " + ioException.getMessage());
+	        }
+	    }
+	}
+
 	
 	@Transactional
 	public String cancelOrder(int orderId) {
