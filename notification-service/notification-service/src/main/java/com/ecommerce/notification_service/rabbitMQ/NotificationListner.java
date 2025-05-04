@@ -7,28 +7,58 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.notification_service.config.RabbitMQConfig;
 import com.ecommerce.notification_service.dto.Notification;
 import com.ecommerce.notification_service.service.MailService;
+import com.rabbitmq.client.Channel;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 
+import javax.management.NotificationListener;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 public class NotificationListner {
 
     private final MailService mailService;
-
+    private static final Logger log = LoggerFactory.getLogger(NotificationListener.class);
+    
     public NotificationListner(MailService mailService) {
         this.mailService = mailService;
     }
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_NOTIFICATION_QUEUE)
-    public void receiveOrderMessage(@Payload Notification notification) {
-        String subject = "Order Notification";
-        String message = buildOrderMessage(notification);
-        sendNotification(notification, subject, message);
+    public void receiveOrderMessage(@Payload Notification notification, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
+        try {
+            String subject = "Order Notification";
+            String message = buildOrderMessage(notification);
+            sendNotification(notification, subject, message);
+            channel.basicAck(tag, false); // Acknowledge on success
+        } catch (Exception e) {
+            log.error("Failed to process order notification: {}", e.getMessage());
+            try {
+                channel.basicNack(tag, false, true); // Reject and requeue
+            } catch (Exception ex) {
+                log.error("Failed to nack message: {}", ex.getMessage());
+            }
+        }
     }
 
     @RabbitListener(queues = RabbitMQConfig.PAYMENT_NOTIFICATION_QUEUE)
-    public void receivePaymentMessage(@Payload Notification notification) {
-        String subject = "Payment Notification";
-        String message = buildPaymentMessage(notification);
-        sendNotification(notification, subject, message);
+    public void receivePaymentMessage(@Payload Notification notification, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
+        try {
+            String subject = "Payment Notification";
+            String message = buildPaymentMessage(notification);
+            sendNotification(notification, subject, message);
+            channel.basicAck(tag, false); // Acknowledge on success
+        } catch (Exception e) {
+            log.error("Failed to process payment notification: {}", e.getMessage());
+            try {
+                channel.basicNack(tag, false, true); // Reject and requeue
+            } catch (Exception ex) {
+                log.error("Failed to nack message: {}", ex.getMessage());
+            }
+        }
     }
 
     private void sendNotification(Notification notification, String subject, String message) {
