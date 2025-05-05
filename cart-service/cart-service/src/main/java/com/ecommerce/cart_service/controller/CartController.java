@@ -1,5 +1,8 @@
 package com.ecommerce.cart_service.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,9 +35,10 @@ public class CartController {
 	}
 	
 	@PostMapping("/add")
-	public ResponseEntity<String> addItem(@RequestBody CartRequest request){
-		System.out.println("Inside controller");
-		return ResponseEntity.ok(cartService.addItems(request));
+	public ResponseEntity<Map<String,String>> addItem(@RequestBody CartRequest request){
+		Map<String,String> response = new HashMap<>();
+		response.put("message", cartService.addItems(request));
+		return ResponseEntity.ok(response);
 	}
 	
 	@GetMapping("/product")
@@ -43,17 +47,23 @@ public class CartController {
 	}
 	
 	@PutMapping("/update")
-	public ResponseEntity<String> updateItem(@RequestBody CartRequest request){
-		return ResponseEntity.ok(cartService.updateCartItem(request));
+	public ResponseEntity<Map<String,String>> updateItem(@RequestBody CartRequest request){
+		Map<String,String> response = new HashMap<>();
+		response.put("message", cartService.updateCartItem(request));
+		return ResponseEntity.ok(response);
 	}
 	
 	@DeleteMapping("/remove")
-	public ResponseEntity<String> removeItem(@RequestBody CartRequest request){
-		return ResponseEntity.ok(cartService.removeCartItem(request));
+	public ResponseEntity<Map<String,String>> removeItem(@RequestBody CartRequest request){
+		Map<String,String> response = new HashMap<>();
+		response.put("message", cartService.removeCartItem(request));
+		return ResponseEntity.ok(response);
 	}
 	
 	@DeleteMapping("/{customerId}")
-	public ResponseEntity<String> clearCart(@PathVariable int customerId){
-		return ResponseEntity.ok(cartService.clearCartItems(customerId));
+	public ResponseEntity<Map<String,String>> clearCart(@PathVariable int customerId){
+		Map<String,String> response = new HashMap<>();
+		response.put("message", cartService.clearCartItems(customerId));
+		return ResponseEntity.ok(response);
 	}
 }

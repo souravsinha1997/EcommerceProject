@@ -11,6 +11,9 @@ import com.ecommerce.cart_service.dto.CartItem;
 import com.ecommerce.cart_service.dto.CartRequest;
 import com.ecommerce.cart_service.dto.CartResponse;
 import com.ecommerce.cart_service.dto.ProductResponse;
+import com.ecommerce.cart_service.exception.EmptyCartException;
+import com.ecommerce.cart_service.exception.InvalidQuantityException;
+import com.ecommerce.cart_service.exception.InvalidRequestException;
 import com.ecommerce.cart_service.security.ValidateRequest;
 
 @Service
@@ -29,7 +32,7 @@ public class CartServiceImpl implements CartService{
 	
 	public CartResponse getAllCartItems(int customerId) {
 		if(!validate.validateCustomer(customerId)) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}
 		String id = Integer.toString(customerId);
 		List<CartItem> items = new ArrayList<>();
@@ -37,6 +40,9 @@ public class CartServiceImpl implements CartService{
 		response.setCustomerId(customerId);
 		
 		items = cartRedisService.getCart(id);
+		if(items.isEmpty()) {
+			throw new EmptyCartException("Cart is empty");
+		}
 		response.setItems(items);
 		
 		return response;	
@@ -44,7 +50,7 @@ public class CartServiceImpl implements CartService{
 	
 	public String addItems(CartRequest request) {
 		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}		
 		ResponseEntity<ProductResponse> product = productClient.getProductById(request.getProductId());
 		
@@ -54,7 +60,7 @@ public class CartServiceImpl implements CartService{
 		item.setProductId(request.getProductId());
 		
 		if(product.getBody().getQuantity()<request.getQuantity() || request.getQuantity()<=0) {
-			throw new RuntimeException("Invalid Quantity");
+			throw new InvalidQuantityException("Invalid Quantity");
 		}
 		else {
 			item.setQuantity(request.getQuantity());
@@ -68,11 +74,14 @@ public class CartServiceImpl implements CartService{
 	
 	public CartResponse getCartItem(CartRequest request) {
 		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}
 		validate.validateCustomer(request.getCustomerId());
 		String custId = Integer.toString(request.getCustomerId());
 		CartItem item= cartRedisService.getCartItemByProductId(custId, request.getProductId());
+		if(item == null) {
+			throw new EmptyCartException("Product is not there in the cart");
+		}
 		CartResponse response = new CartResponse();
 		List<CartItem> itemList = new ArrayList<>();
 		itemList.add(item);
@@ -83,7 +92,7 @@ public class CartServiceImpl implements CartService{
 	
 	public String updateCartItem(CartRequest request) {
 		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}
 		validate.validateCustomer(request.getCustomerId());
 		String custId = Integer.toString(request.getCustomerId());
@@ -93,7 +102,7 @@ public class CartServiceImpl implements CartService{
 	
 	public String removeCartItem(CartRequest request) {
 		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}
 		validate.validateCustomer(request.getCustomerId());
 		String custId = Integer.toString(request.getCustomerId());
@@ -103,7 +112,7 @@ public class CartServiceImpl implements CartService{
 	
 	public String clearCartItems(int customerId) {
 		if(!validate.validateCustomer(customerId)) {
-			throw new RuntimeException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid customer id in request");
 		}
 		validate.validateCustomer(customerId);
 		String custId = Integer.toString(customerId);
