@@ -14,6 +14,9 @@ import com.ecommerce.customer_service.dto.UserResponse;
 import com.ecommerce.customer_service.entity.Address;
 import com.ecommerce.customer_service.entity.Token;
 import com.ecommerce.customer_service.entity.User;
+import com.ecommerce.customer_service.exception.AddressNotFoundException;
+import com.ecommerce.customer_service.exception.InvalidLoginException;
+import com.ecommerce.customer_service.exception.UserNotFoundException;
 import com.ecommerce.customer_service.repository.AddressRepository;
 import com.ecommerce.customer_service.repository.UserRepository;
 import com.ecommerce.customer_service.security.JwtService;
@@ -39,7 +42,6 @@ public class UserServiceImpl implements UserService {
 	
 	public List<UserResponse> getAllUsers(){
 		List<User> users =  userRepo.findAll();
-		
 		List<UserResponse> response = new ArrayList<>();
 		for(User user : users) {
 			UserResponse userResponse = new UserResponse();
@@ -59,7 +61,7 @@ public class UserServiceImpl implements UserService {
 		Optional<User> user =  userRepo.findById(id);
 		UserResponse userResponse = new UserResponse();
 		if(user==null) {
-			throw new RuntimeException("User does not exist");
+			throw new UserNotFoundException("User does not exist with id : "+id);
 		}
 		else {
 			userResponse.setAddress(user.get().getAddress());
@@ -83,15 +85,15 @@ public class UserServiceImpl implements UserService {
 			addressRepo.delete(address.get());
 		}
 		else {
-			throw new RuntimeException("User and Address not found");
+			throw new UserNotFoundException("User not found with id : "+id);
 		}
 		
 		return "User account is removed successfully";
 	}
 	
 	public UserResponse updateUser(UserRequest request, int id) {
-		User savedUser = userRepo.findById(id).orElseThrow(()->new RuntimeException("User not found"));
-		Address savedAddress = addressRepo.findById(savedUser.getAddress().getId()).orElseThrow(()->new RuntimeException("Address not found"));
+		User savedUser = userRepo.findById(id).orElseThrow(()->new UserNotFoundException("User not found with id : "+id));
+		Address savedAddress = addressRepo.findById(savedUser.getAddress().getId()).orElseThrow(()->new AddressNotFoundException("Address not found for the user with id :"+id));
 		
 		if(request.getAddressLine()!=null && !request.getAddressLine().equals("")) {
 			savedAddress.setAddressLine(request.getAddressLine());
@@ -162,10 +164,10 @@ public class UserServiceImpl implements UserService {
 	
     public Token loginUser(LoginRequest loginRequest) {
         User user = userRepo.findByUserName(loginRequest.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+                .orElseThrow(() -> new InvalidLoginException("Invalid username or password"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid username or password");
+            throw new InvalidLoginException("Invalid username or password");
         }
 
         String token = jwtService.generateToken(user);

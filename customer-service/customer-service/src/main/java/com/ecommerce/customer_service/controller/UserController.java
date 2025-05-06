@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.customer_service.dto.LoginRequest;
+import com.ecommerce.customer_service.dto.MessageResponse;
 import com.ecommerce.customer_service.dto.UserRequest;
 import com.ecommerce.customer_service.dto.UserResponse;
 import com.ecommerce.customer_service.entity.Token;
@@ -35,8 +36,8 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> createUser(@RequestBody UserRequest userRequest) {
-        return ResponseEntity.ok(userService.saveUser(userRequest));
+    public ResponseEntity<MessageResponse> createUser(@RequestBody UserRequest userRequest) {
+        return ResponseEntity.ok(new MessageResponse(userService.saveUser(userRequest)));
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -58,8 +59,8 @@ public class UserController {
     
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/admin/customers/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable int id) {
-        return ResponseEntity.ok(userService.deleteUser(id));
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable int id) {
+        return ResponseEntity.ok(new MessageResponse(userService.deleteUser(id)));
     }
     
     
