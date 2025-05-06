@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ecommerce.payment_service.dto.MessageResponse;
 import com.ecommerce.payment_service.service.PaymentService;
 
 @RestController
@@ -22,7 +23,7 @@ public class PaymentController {
 	
 	@PreAuthorize("hasAuthority('ROLE_USER')")
 	@PostMapping("/{paymentId}")
-	public ResponseEntity<String> completePayment(@PathVariable int paymentId) {
-		return ResponseEntity.ok(paymentService.payTheAmount(paymentId));
+	public ResponseEntity<MessageResponse> completePayment(@PathVariable int paymentId) {
+		return ResponseEntity.ok(new MessageResponse(paymentService.payTheAmount(paymentId)));
 	}
 }

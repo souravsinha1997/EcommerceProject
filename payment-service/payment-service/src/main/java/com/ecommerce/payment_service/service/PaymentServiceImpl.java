@@ -14,6 +14,10 @@ import com.ecommerce.payment_service.config.RabbitMQConfig;
 import com.ecommerce.payment_service.dto.Notification;
 import com.ecommerce.payment_service.dto.Order;
 import com.ecommerce.payment_service.entity.Payment;
+import com.ecommerce.payment_service.exception.CustomerNotFoundException;
+import com.ecommerce.payment_service.exception.InvalidPaymentIdException;
+import com.ecommerce.payment_service.exception.InvalidTokenException;
+import com.ecommerce.payment_service.exception.PaymentException;
 import com.ecommerce.payment_service.repository.PaymentRepository;
 import com.ecommerce.payment_service.security.ValidateRequest;
 import com.ecommerce.payment_service.service.rabbitMQ.PaymentPublisher;
@@ -36,9 +40,9 @@ public class PaymentServiceImpl implements PaymentService{
 	@Transactional
 	public String payTheAmount(int id) {
 		
-		Payment payment = paymentRepo.findById(id).orElseThrow(()-> new RuntimeException("Invalid payment id"));	
+		Payment payment = paymentRepo.findById(id).orElseThrow(()-> new InvalidPaymentIdException("Invalid payment id"));	
 		if(!validate.validateCustomer(payment.getUserId())) {
-			throw new RuntimeException("Invalid Customer Id");
+			throw new InvalidTokenException("Invalid Token");
 		}
 		if(payment.getStatus().equals("PENDING"))
 			payment.setStatus("PAID");
@@ -64,50 +68,70 @@ public class PaymentServiceImpl implements PaymentService{
 	@Transactional
 	@RabbitListener(queues = RabbitMQConfig.ORDER_QUEUE)
     public void receiveOrderMessage(@Payload Order order) {
-        Payment payment = new Payment();
-        payment.setOrderId(order.getId());
-        payment.setCreatedAt(order.getOrderDate());
-        payment.setUserId(order.getCustomerId());
-        payment.setAmount(order.getTotalPrice());
-        payment.setStatus("PENDING");
-     
-        Payment savedPayment = paymentRepo.save(payment);
-        
-        ResponseEntity<UserResponse> customer = customerClient.getUser(savedPayment.getUserId());
-		Notification notification = new Notification();
-		notification.setAmount(savedPayment.getAmount());
-		notification.setOrderId(savedPayment.getId());
-		notification.setStatus(savedPayment.getStatus());
-		notification.setUsermail(customer.getBody().getEmail());
-		notification.setUserName(customer.getBody().getUserName());
-		
-		paymentPublisher.sendNotificationUpdate(notification);
-		
-		
-        System.out.println( "Payment pending for id : "+savedPayment.getId());
+		 try {
+		        Payment payment = new Payment();
+		        payment.setOrderId(order.getId());
+		        payment.setCreatedAt(order.getOrderDate());
+		        payment.setUserId(order.getCustomerId());
+		        payment.setAmount(order.getTotalPrice());
+		        payment.setStatus("PENDING");
+
+		        // Validate user before saving payment
+		        ResponseEntity<UserResponse> customer = customerClient.getUser(order.getCustomerId());
+		        if (customer == null || customer.getBody() == null) {
+		            throw new CustomerNotFoundException("Customer not found");
+		        }
+
+		        // Save payment only after successful customer fetch
+		        Payment savedPayment = paymentRepo.save(payment);
+
+		        Notification notification = new Notification();
+		        notification.setAmount(savedPayment.getAmount());
+		        notification.setOrderId(savedPayment.getId());
+		        notification.setStatus(savedPayment.getStatus());
+		        notification.setUsermail(customer.getBody().getEmail());
+		        notification.setUserName(customer.getBody().getUserName());
+
+		        paymentPublisher.sendNotificationUpdate(notification);
+
+		        System.out.println("Payment pending for id : " + savedPayment.getId());
+
+		    } catch (Exception e) {
+		        // Log and let Spring roll back the transaction
+		        System.err.println("Error processing order: " + e.getMessage());
+		        throw new PaymentException("Internal server error"); // rethrow to trigger transaction rollback
+		    }
     }
 	
 	@Transactional
 	@RabbitListener(queues = RabbitMQConfig.ORDER_CANCEL_QUEUE)
     public void cancelOrderMessage(@Payload Order order) {
-		Payment payment = paymentRepo.findByOrderId(order.getId());
+		try {
+			Payment payment = paymentRepo.findByOrderId(order.getId());
 		
-		if(payment.getStatus().equals("PAID"))
-			payment.setStatus("REFUNDED");
-		else
-			payment.setStatus("CANCELLED");
+			if(payment.getStatus().equals("PAID"))
+				payment.setStatus("REFUNDED");
+			else
+				payment.setStatus("CANCELLED");
      
-		ResponseEntity<UserResponse> customer = customerClient.getUser(payment.getUserId());
-		Notification notification = new Notification();
-		notification.setAmount(payment.getAmount());
-		notification.setOrderId(payment.getId());
-		notification.setStatus(payment.getStatus());
-		notification.setUsermail(customer.getBody().getEmail());
-		notification.setUserName(customer.getBody().getUserName());
+			ResponseEntity<UserResponse> customer = customerClient.getUser(payment.getUserId());
+			Notification notification = new Notification();
+			notification.setAmount(payment.getAmount());
+			notification.setOrderId(payment.getId());
+			notification.setStatus(payment.getStatus());
+			notification.setUsermail(customer.getBody().getEmail());
+			notification.setUserName(customer.getBody().getUserName());
 		
-		paymentPublisher.sendNotificationUpdate(notification);
+			paymentPublisher.sendNotificationUpdate(notification);
 		
-        Payment savedPayment = paymentRepo.save(payment);
-        System.out.println( "Payment refunded for id : "+savedPayment.getId());
-    }
+			Payment savedPayment = paymentRepo.save(payment);
+			System.out.println( "Payment refunded for id : "+savedPayment.getId());
+		}
+		catch (Exception e) {
+	        // Log and let Spring roll back the transaction
+	        System.err.println("Error processing order: " + e.getMessage());
+	        throw new PaymentException("Internal server error"); // rethrow to trigger transaction rollback
+	    }
+	}
+
 }
