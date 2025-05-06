@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ecommerce.order_service.entity.dto.MessageResponse;
 import com.ecommerce.order_service.entity.dto.OrderResponse;
 import com.ecommerce.order_service.service.OrderService;
 
@@ -30,13 +31,13 @@ public class OrderController {
 	
 	@PreAuthorize("hasAuthority('USER')")
 	@PostMapping("/{customerId}")
-	public ResponseEntity<String> placeOrder(@PathVariable int customerId){
-		return ResponseEntity.ok(orderService.placeOrder(customerId));
+	public ResponseEntity<MessageResponse> placeOrder(@PathVariable int customerId){
+		return ResponseEntity.ok(new MessageResponse(orderService.placeOrder(customerId)));
 	}
 	
 	@PreAuthorize("hasAuthority('USER')")
 	@PutMapping("/{orderId}")
-	public ResponseEntity<String> cancelOrder(@PathVariable int orderId){
-		return ResponseEntity.ok(orderService.cancelOrder(orderId));
+	public ResponseEntity<MessageResponse> cancelOrder(@PathVariable int orderId){
+		return ResponseEntity.ok(new MessageResponse(orderService.cancelOrder(orderId)));
 	}
 }

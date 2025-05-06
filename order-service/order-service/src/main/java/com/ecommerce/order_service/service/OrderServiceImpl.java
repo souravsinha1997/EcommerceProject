@@ -27,6 +27,9 @@ import com.ecommerce.order_service.entity.OrderItem;
 import com.ecommerce.order_service.entity.dto.OrderItemResponse;
 import com.ecommerce.order_service.entity.dto.OrderResponse;
 import com.ecommerce.order_service.entity.dto.PaymentResponse;
+import com.ecommerce.order_service.exception.EmptyCartException;
+import com.ecommerce.order_service.exception.InvalidRequestException;
+import com.ecommerce.order_service.exception.OrderNotFoundException;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.security.ValidateRequest;
 import com.ecommerce.order_service.service.rabbitMQ.OrderPublisher;
@@ -63,21 +66,20 @@ public class OrderServiceImpl implements OrderService{
 	public String placeOrder(int customerId) {
 		
 		if(!validate.validateCustomer(customerId)) {
-			throw new RuntimeException("Invalid token");
+			throw new InvalidRequestException("Invalid token");
 		}
 		ResponseEntity<CartResponse> cart = cartClient.getAllItems(customerId);
 		
 		if(cart.getBody().getItems().isEmpty()) {
-			throw new RuntimeException("Cart is empty, please add items in your cart");
+			throw new EmptyCartException("Cart is empty, please add items in your cart");
 		}
 		
 		//ResponseEntity<UserResponse> user = customerClient.getUser(customerId);
 		
 		
-		double totalAmount = 0;
-		for(CartItem item : cart.getBody().getItems()) {
-			totalAmount += item.getPrice()*item.getQuantity();
-		}
+		double totalAmount = cart.getBody().getItems().stream()
+			    .mapToDouble(item -> item.getPrice() * item.getQuantity())
+			    .sum();
 		
 		Order order = new Order();
 		order.setCustomerId(customerId); 
@@ -107,9 +109,9 @@ public class OrderServiceImpl implements OrderService{
 	
 	@Transactional
 	public OrderResponse trackOrder(int id) {
-		Order order = orderRepo.findById(id).orElseThrow(()-> new RuntimeException("Invalid order id"));
+		Order order = orderRepo.findById(id).orElseThrow(()-> new OrderNotFoundException("Invalid order id : "+id));
 		if(!validate.validateCustomer(order.getCustomerId())) {
-			throw new RuntimeException("Invalid token");
+			throw new InvalidRequestException("Invalid token");
 		}
 		//get customer details using customer client
 		ResponseEntity<UserResponse> customer = customerClient.getUser(order.getCustomerId());	
@@ -147,7 +149,7 @@ public class OrderServiceImpl implements OrderService{
 	        int order_id = paymentResponse.getOrderId();
 
 	        Order savedOrder = orderRepo.findById(order_id)
-	                .orElseThrow(() -> new RuntimeException("Invalid order no"));
+	                .orElseThrow(() -> new OrderNotFoundException("Invalid order no"));
 
 	        if ("PAID".equals(paymentResponse.getStatus())) {
 
@@ -201,7 +203,7 @@ public class OrderServiceImpl implements OrderService{
 	
 	@Transactional
 	public String cancelOrder(int orderId) {
-		Order order = orderRepo.findById(orderId).orElseThrow(()-> new RuntimeException("Invalid Order Number"));
+		Order order = orderRepo.findById(orderId).orElseThrow(()-> new OrderNotFoundException("Invalid Order Number :"+orderId));
 		
 		order.setStatus("CANCELLED");
 		
