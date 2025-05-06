@@ -10,6 +10,8 @@ import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.entity.Category;
 import com.ecommerce.product_service.entity.Product;
+import com.ecommerce.product_service.exception.CategoryNotFoundException;
+import com.ecommerce.product_service.exception.ProductNotFoundException;
 import com.ecommerce.product_service.repository.CategoryRepository;
 import com.ecommerce.product_service.repository.ProductRepository;
 
@@ -29,7 +31,7 @@ public class ProductServiceImpl implements ProductService {
 		List<ProductResponse> response = new ArrayList<>();
 		
 		if(products==null) {
-			throw new RuntimeException("No products found");
+			throw new ProductNotFoundException("No products found");
 		}
 		for(Product product : products) {
 			ProductResponse res = EntityToResponse(product);
@@ -41,14 +43,14 @@ public class ProductServiceImpl implements ProductService {
 	
 	
 	public ProductResponse getProduct(int id) {
-		Product product = productRepo.findById(id).orElseThrow(()-> new RuntimeException("No products found"));
+		Product product = productRepo.findById(id).orElseThrow(()-> new ProductNotFoundException("No products found"));
 		
 		ProductResponse response = EntityToResponse(product);
 		return response;
 	}
 	
 	public ProductResponse getProductByName(String name) {
-		Product product = productRepo.findByName(name).orElseThrow(()-> new RuntimeException("No products found"));
+		Product product = productRepo.findByName(name).orElseThrow(()-> new ProductNotFoundException("No products found"));
 		
 		ProductResponse response = EntityToResponse(product);
 		return response;
@@ -57,8 +59,11 @@ public class ProductServiceImpl implements ProductService {
 	@Transactional
 	public List<ProductResponse> getProductByCategory(String category) {
 		Category savedCategory = categoryRepo.findByName(category);
+		if(savedCategory==null) {
+			throw new CategoryNotFoundException("Category not found");
+		}
 		List<Product> products = productRepo.findByCategory(savedCategory);//.orElseThrow(()-> new RuntimeException("No products found"));
-		
+		if(products.isEmpty()) throw new ProductNotFoundException("No Products found");
 		List<ProductResponse> responseList = new ArrayList<>();
 		for(Product product : products) {
 			ProductResponse response = EntityToResponse(product);
@@ -81,7 +86,7 @@ public class ProductServiceImpl implements ProductService {
 	
 	public String deleteProduct(int id) {
 		Product product = productRepo.findById(id)
-							.orElseThrow(() -> new RuntimeException("Product not found"));
+							.orElseThrow(() -> new ProductNotFoundException("Product not found"));
 		
 		productRepo.delete(product);
 		return "Product deleted successfully";
@@ -89,7 +94,7 @@ public class ProductServiceImpl implements ProductService {
 	
 	public ProductResponse updateProduct(ProductRequest request, int id) {
 		Product savedProduct = productRepo.findById(id)
-								.orElseThrow(()-> new RuntimeException("No products found"));
+								.orElseThrow(()-> new ProductNotFoundException("No products found"));
 		
 		if(request.getBrand()!=null && !request.getBrand().isEmpty()) {
 			savedProduct.setBrand(request.getBrand());

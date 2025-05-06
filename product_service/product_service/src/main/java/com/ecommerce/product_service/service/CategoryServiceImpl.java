@@ -10,6 +10,7 @@ import com.ecommerce.product_service.dto.CategoryRequest;
 import com.ecommerce.product_service.dto.CategoryResponse;
 import com.ecommerce.product_service.entity.Category;
 import com.ecommerce.product_service.entity.Product;
+import com.ecommerce.product_service.exception.CategoryNotFoundException;
 import com.ecommerce.product_service.repository.CategoryRepository;
 import com.ecommerce.product_service.repository.ProductRepository;
 
@@ -28,7 +29,7 @@ public class CategoryServiceImpl implements CategoryService{
 		List<Category> categories = categoryRepo.findAll();
 		
 		if(categories==null) {
-			throw new RuntimeException("No Category was found");
+			throw new CategoryNotFoundException("No Category was found");
 		}
 		
 		List<CategoryResponse> categoryResponse = new ArrayList<>();
@@ -42,7 +43,7 @@ public class CategoryServiceImpl implements CategoryService{
 	}
 	
 	public CategoryResponse getCategory(int id) {
-		Category category = categoryRepo.findById(id).orElseThrow(()-> new RuntimeException("Category not found"));
+		Category category = categoryRepo.findById(id).orElseThrow(()-> new CategoryNotFoundException("Category not found"));
 		
 		CategoryResponse response = new CategoryResponse();
 		response.setName(category.getName());
@@ -64,7 +65,7 @@ public class CategoryServiceImpl implements CategoryService{
 	
 	@Transactional
 	public String deleteCategory(int id) {
-		Category savedCategory = categoryRepo.findById(id).orElseThrow(()-> new RuntimeException("Category does not exist"));
+		Category savedCategory = categoryRepo.findById(id).orElseThrow(()-> new CategoryNotFoundException("Category does not exist"));
 		
 		List<Product> products = productRepo.findByCategory(savedCategory);
 		for(Product product : products) {
@@ -79,7 +80,7 @@ public class CategoryServiceImpl implements CategoryService{
 	public CategoryResponse updateCategory(CategoryRequest request,int id) {
 		
 		Category savedCategory = categoryRepo.findById(id)
-				.orElseThrow(()-> new RuntimeException("Category does not exist"));
+				.orElseThrow(()-> new CategoryNotFoundException("Category does not exist"));
 		
 		if(request.getDescription()!=null && !request.getDescription().isEmpty())
 			savedCategory.setDescription(request.getDescription());

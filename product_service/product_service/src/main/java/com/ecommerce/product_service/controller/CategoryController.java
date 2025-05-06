@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.product_service.dto.CategoryRequest;
 import com.ecommerce.product_service.dto.CategoryResponse;
+import com.ecommerce.product_service.dto.MessageResponse;
 import com.ecommerce.product_service.service.CategoryService;
 
 @RestController
@@ -39,14 +40,14 @@ public class CategoryController {
 	
 	@PreAuthorize("hasAuthority('ADMIN")
 	@PostMapping("/admin/category")
-	public ResponseEntity<String> createCategory(@RequestBody CategoryRequest request){
-		return ResponseEntity.ok(categoryService.saveCategory(request));
+	public ResponseEntity<MessageResponse> createCategory(@RequestBody CategoryRequest request){
+		return ResponseEntity.ok(new MessageResponse(categoryService.saveCategory(request)));
 	}
 	
 	@PreAuthorize("hasAuthority('ADMIN')")
 	@DeleteMapping("/admin/category/{id}")
-	public ResponseEntity<String> deleteCategory(@PathVariable int id){
-		return ResponseEntity.ok(categoryService.deleteCategory(id));
+	public ResponseEntity<MessageResponse> deleteCategory(@PathVariable int id){
+		return ResponseEntity.ok(new MessageResponse(categoryService.deleteCategory(id)));
 	}
 	
 	@PreAuthorize("hasAuthority('ADMIN')")

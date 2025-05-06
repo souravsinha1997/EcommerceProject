@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ecommerce.product_service.dto.MessageResponse;
 import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.service.ProductService;
@@ -50,14 +51,14 @@ public class ProductController {
 	
 	@PreAuthorize("hasAuthority('ADMIN')")
 	@PostMapping("/admin/product")
-	public ResponseEntity<String> createProduct(@RequestBody ProductRequest request){
-		return ResponseEntity.ok(productService.createProduct(request));
+	public ResponseEntity<MessageResponse> createProduct(@RequestBody ProductRequest request){
+		return ResponseEntity.ok(new MessageResponse(productService.createProduct(request)));
 	}
 	
 	@PreAuthorize("hasAuthority('ADMIN')")
 	@DeleteMapping("/admin/product/{id}")
-	public ResponseEntity<String> deleteProduct(@PathVariable int id){
-		return ResponseEntity.ok(productService.deleteProduct(id));
+	public ResponseEntity<MessageResponse> deleteProduct(@PathVariable int id){
+		return ResponseEntity.ok(new MessageResponse(productService.deleteProduct(id)));
 	}
 	
 	@PreAuthorize("hasAuthority('ADMIN')")
