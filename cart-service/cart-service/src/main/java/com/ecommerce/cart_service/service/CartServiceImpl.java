@@ -11,23 +11,26 @@ import com.ecommerce.cart_service.dto.CartItem;
 import com.ecommerce.cart_service.dto.CartRequest;
 import com.ecommerce.cart_service.dto.CartResponse;
 import com.ecommerce.cart_service.dto.ProductResponse;
+import com.ecommerce.cart_service.exception.ClientDownException;
 import com.ecommerce.cart_service.exception.EmptyCartException;
 import com.ecommerce.cart_service.exception.InvalidQuantityException;
 import com.ecommerce.cart_service.exception.InvalidRequestException;
 import com.ecommerce.cart_service.security.ValidateRequest;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @Service
 public class CartServiceImpl implements CartService{
 
 	
 	private final CartRedisService cartRedisService;
-	private final ProductClient productClient;
 	private final ValidateRequest validate;
+	private final ProductService productService;
 	
-	public CartServiceImpl(ValidateRequest validate,CartRedisService cartRedisService,ProductClient productClient) {
+	public CartServiceImpl(ProductService productService,ValidateRequest validate,CartRedisService cartRedisService) {
 		this.cartRedisService = cartRedisService;
-		this.productClient = productClient;
 		this.validate = validate;
+		this.productService = productService;
 	}
 	
 	public CartResponse getAllCartItems(int customerId) {
@@ -52,8 +55,10 @@ public class CartServiceImpl implements CartService{
 		if(!validate.validateCustomer(request.getCustomerId())) {
 			throw new InvalidRequestException("Invalid customer id in request");
 		}		
-		ResponseEntity<ProductResponse> product = productClient.getProductById(request.getProductId());
-		
+		ResponseEntity<ProductResponse> product = productService.fetchProductDetails(request.getProductId());
+		if(product.getBody().getCategory().equals("Fallback")) {
+			throw new ClientDownException("Server is not available at this moment, please try after sometime!");
+		}
 		CartItem item = new CartItem();
 		item.setName(product.getBody().getName());
 		item.setPrice(product.getBody().getPrice());
