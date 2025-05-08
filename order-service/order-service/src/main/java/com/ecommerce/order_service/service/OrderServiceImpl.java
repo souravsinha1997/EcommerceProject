@@ -12,13 +12,11 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ecommerce.order_service.client.CartClient;
-import com.ecommerce.order_service.client.CustomerClient;
-import com.ecommerce.order_service.client.ProductClient;
 import com.ecommerce.order_service.client.dto.CartItem;
 import com.ecommerce.order_service.client.dto.CartResponse;
 import com.ecommerce.order_service.client.dto.ProductRequest;
 import com.ecommerce.order_service.client.dto.ProductResponse;
+import com.ecommerce.order_service.client.dto.Role;
 import com.ecommerce.order_service.client.dto.UserResponse;
 import com.ecommerce.order_service.config.RabbitMQConfig;
 import com.ecommerce.order_service.entity.Notification;
@@ -27,6 +25,7 @@ import com.ecommerce.order_service.entity.OrderItem;
 import com.ecommerce.order_service.entity.dto.OrderItemResponse;
 import com.ecommerce.order_service.entity.dto.OrderResponse;
 import com.ecommerce.order_service.entity.dto.PaymentResponse;
+import com.ecommerce.order_service.exception.ClientDownException;
 import com.ecommerce.order_service.exception.EmptyCartException;
 import com.ecommerce.order_service.exception.InvalidRequestException;
 import com.ecommerce.order_service.exception.OrderNotFoundException;
@@ -35,29 +34,26 @@ import com.ecommerce.order_service.security.ValidateRequest;
 import com.ecommerce.order_service.service.rabbitMQ.OrderPublisher;
 
 import com.rabbitmq.client.Channel;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class OrderServiceImpl implements OrderService{
 
 	private final OrderRepository orderRepo;
-	private final ProductClient productClient;
-	private final CustomerClient customerClient;
-	private final CartClient cartClient;
+	private final ProductService productService;
+	private final CustomerService customerService;
+	private final CartService cartService;
 	private final OrderPublisher orderPublisher;
 	private final ValidateRequest validate;
 	
-	public OrderServiceImpl(OrderRepository orderRepo,ProductClient productClient,
-			CustomerClient customerClient,CartClient cartClient,
+	public OrderServiceImpl(OrderRepository orderRepo,ProductService productService,
+			CustomerService customerService,CartService cartService,
 			OrderPublisher orderPublisher,ValidateRequest validate) {
 		this.orderRepo = orderRepo;
-		this.productClient = productClient;
-		this.cartClient = cartClient;
-		this.customerClient = customerClient;
+		this.productService = productService;
+		this.cartService = cartService;
+		this.customerService = customerService;
 		this.orderPublisher = orderPublisher;
 		this.validate = validate;
 	}
@@ -68,8 +64,10 @@ public class OrderServiceImpl implements OrderService{
 		if(!validate.validateCustomer(customerId)) {
 			throw new InvalidRequestException("Invalid token");
 		}
-		ResponseEntity<CartResponse> cart = cartClient.getAllItems(customerId);
-		
+		ResponseEntity<CartResponse> cart = cartService.fetchAllItems(customerId);
+		if(cart.getBody().getCustomerId()==0) {
+			throw new ClientDownException("Cart service is down, please try after sometime!");
+		}
 		if(cart.getBody().getItems().isEmpty()) {
 			throw new EmptyCartException("Cart is empty, please add items in your cart");
 		}
@@ -100,7 +98,10 @@ public class OrderServiceImpl implements OrderService{
 		
 		order.setOrderItems(orderItems);
 		Order savedOrder = orderRepo.save(order);
-		cartClient.clearCart(customerId);
+		String clearResponse = cartService.clearCart(customerId).getBody();
+		if(clearResponse.equals("Fallback")) {
+			throw new ClientDownException("Cart service is down, please try after sometime");
+		}
 		//use RabbitMQ to share order details to payment service
 		orderPublisher.sendOrderToPaymentQueue(savedOrder);
 		
@@ -114,7 +115,10 @@ public class OrderServiceImpl implements OrderService{
 			throw new InvalidRequestException("Invalid token");
 		}
 		//get customer details using customer client
-		ResponseEntity<UserResponse> customer = customerClient.getUser(order.getCustomerId());	
+		ResponseEntity<UserResponse> customer = customerService.fetchUser(order.getCustomerId());
+		if(customer.getBody().getRole().equals(Role.SERVERDOWN)) {
+			throw new ClientDownException("Customer Service is down, please try after sometime");
+		}
 		String customerName = customer.getBody().getUserName();
 		OrderResponse response = new OrderResponse();
 		
@@ -128,7 +132,10 @@ public class OrderServiceImpl implements OrderService{
 		List<OrderItem> items = order.getOrderItems();
 		
 		for(OrderItem item : items) {
-			ResponseEntity<ProductResponse> product = productClient.getProductById(item.getProductId());
+			ResponseEntity<ProductResponse> product = productService.fetchProductDetails(item.getProductId());
+			if(product.getBody().getCategory().equals("Fallback")) {
+				throw new ClientDownException("Product service is down, please try after sometime!");
+			}
 			OrderItemResponse orderItemResponse = new OrderItemResponse();
 			orderItemResponse.setPrice(item.getUnitPrice());
 			orderItemResponse.setProductName(product.getBody().getName());
@@ -160,12 +167,18 @@ public class OrderServiceImpl implements OrderService{
 	                List<OrderItem> orderItems = savedOrder.getOrderItems();
 
 	                for (OrderItem item : orderItems) {
-	                    ResponseEntity<ProductResponse> product = productClient.getProductById(item.getProductId());
+	                    ResponseEntity<ProductResponse> product = productService.fetchProductDetails(item.getProductId());
+	                    if(product.getBody().getCategory().equals("Fallback")) {
+	                    	throw new ClientDownException("Product service is down, please try after sometime");
+	                    }
 	                    int quantity = product.getBody().getQuantity() - item.getQuantity();
 
 	                    ProductRequest productRequest = new ProductRequest();
 	                    productRequest.setQuantity(quantity);
-	                    productClient.updateStock(productRequest, item.getProductId());
+	                    ProductResponse updateStockResponse= productService.updateStock(productRequest, item.getProductId()).getBody();
+	                    if(updateStockResponse.getCategory().equals("Fallback")){
+	                    	throw new ClientDownException("Product service is down, please try after sometime");
+	                    }
 	                }
 	            } else {
 	                savedOrder.setStatus("FAILED");
@@ -174,8 +187,11 @@ public class OrderServiceImpl implements OrderService{
 	            orderRepo.save(savedOrder);
 	        }
 
-	        ResponseEntity<UserResponse> customer = customerClient.getUser(savedOrder.getCustomerId());
-
+	        ResponseEntity<UserResponse> customer = customerService.fetchUser(savedOrder.getCustomerId());
+	        if(customer.getBody().getRole().equals(Role.SERVERDOWN)) {
+				throw new ClientDownException("Customer Service is down, please try after sometime");
+			}
+	        
 	        Notification notification = new Notification();
 	        notification.setOrderId(savedOrder.getId());
 	        notification.setStatus(savedOrder.getStatus());
@@ -211,7 +227,11 @@ public class OrderServiceImpl implements OrderService{
 		
 		orderPublisher.sendOrderToPaymentCancelQueue(canceledOrder);
 		
-		ResponseEntity<UserResponse> customer = customerClient.getUser(canceledOrder.getCustomerId());	
+		ResponseEntity<UserResponse> customer = customerService.fetchUser(canceledOrder.getCustomerId());	
+		if(customer.getBody().getRole().equals(Role.SERVERDOWN)) {
+			throw new ClientDownException("Customer Service is down, please try after sometime");
+		}
+		
 		Notification notification = new Notification();
 		notification.setAmount(canceledOrder.getTotalPrice());
 		notification.setOrderId(canceledOrder.getId());
