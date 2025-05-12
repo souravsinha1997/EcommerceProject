@@ -35,7 +35,7 @@ public class CartServiceImpl implements CartService{
 	
 	public CartResponse getAllCartItems(int customerId) {
 		if(!validate.validateCustomer(customerId)) {
-			throw new InvalidRequestException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid Token");
 		}
 		String id = Integer.toString(customerId);
 		List<CartItem> items = new ArrayList<>();
@@ -51,9 +51,9 @@ public class CartServiceImpl implements CartService{
 		return response;	
 	}
 	
-	public String addItems(CartRequest request) {
-		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new InvalidRequestException("Invalid customer id in request");
+	public String addItems(int customerId,CartRequest request) {
+		if(!validate.validateCustomer(customerId)) {
+			throw new InvalidRequestException("Invalid Token");
 		}		
 		ResponseEntity<ProductResponse> product = productService.fetchProductDetails(request.getProductId());
 		if(product.getBody().getCategory().equals("Fallback")) {
@@ -71,18 +71,18 @@ public class CartServiceImpl implements CartService{
 			item.setQuantity(request.getQuantity());
 		}
 
-		String customerId = Integer.toString(request.getCustomerId());
-		cartRedisService.addToCart(customerId, item);
+		String stringCustomerId = Integer.toString(customerId);
+		cartRedisService.addToCart(stringCustomerId, item);
 		return "Item added to the cart";
 		
 	}
 	
-	public CartResponse getCartItem(CartRequest request) {
-		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new InvalidRequestException("Invalid customer id in request");
+	public CartResponse getCartItem(int customerId,CartRequest request) {
+		if(!validate.validateCustomer(customerId)) {
+			throw new InvalidRequestException("Invalid Token");
 		}
-		validate.validateCustomer(request.getCustomerId());
-		String custId = Integer.toString(request.getCustomerId());
+		validate.validateCustomer(customerId);
+		String custId = Integer.toString(customerId);
 		CartItem item= cartRedisService.getCartItemByProductId(custId, request.getProductId());
 		if(item == null) {
 			throw new EmptyCartException("Product is not there in the cart");
@@ -90,34 +90,34 @@ public class CartServiceImpl implements CartService{
 		CartResponse response = new CartResponse();
 		List<CartItem> itemList = new ArrayList<>();
 		itemList.add(item);
-		response.setCustomerId(request.getCustomerId());
+		response.setCustomerId(customerId);
 		response.setItems(itemList);
 		return response;
 	}
 	
-	public String updateCartItem(CartRequest request) {
-		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new InvalidRequestException("Invalid customer id in request");
+	public String updateCartItem(int customerId,CartRequest request) {
+		if(!validate.validateCustomer(customerId)) {
+			throw new InvalidRequestException("Invalid Token");
 		}
-		validate.validateCustomer(request.getCustomerId());
-		String custId = Integer.toString(request.getCustomerId());
+		validate.validateCustomer(customerId);
+		String custId = Integer.toString(customerId);
 		cartRedisService.updateCartItem(custId, request.getProductId(), request.getQuantity());		
 		return "Cart updated successfully";
 	}
 	
-	public String removeCartItem(CartRequest request) {
-		if(!validate.validateCustomer(request.getCustomerId())) {
-			throw new InvalidRequestException("Invalid customer id in request");
+	public String removeCartItem(int customerId,CartRequest request) {
+		if(!validate.validateCustomer(customerId)) {
+			throw new InvalidRequestException("Invalid Token");
 		}
-		validate.validateCustomer(request.getCustomerId());
-		String custId = Integer.toString(request.getCustomerId());
+		validate.validateCustomer(customerId);
+		String custId = Integer.toString(customerId);
 		cartRedisService.removeFromCart(custId, request.getProductId());
 		return "Item removed successfully";
 	}
 	
 	public String clearCartItems(int customerId) {
 		if(!validate.validateCustomer(customerId)) {
-			throw new InvalidRequestException("Invalid customer id in request");
+			throw new InvalidRequestException("Invalid Token");
 		}
 		validate.validateCustomer(customerId);
 		String custId = Integer.toString(customerId);

@@ -30,8 +30,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(req -> req
                         .requestMatchers("/api/customers/register", "/api/customers/login","/api/customers/{id}").permitAll()
+                        .requestMatchers("/api/v2/customers/signIn", "/api/v2/customers/signUp","/api/v2/customers/{id}").permitAll()
                         //.requestMatchers("/api/customers/exists/{id}" , "/api/customers/email/{id}").permitAll()// ✅ Allow JWKS access
                         .requestMatchers("/api/customers/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v2/admin/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

@@ -34,29 +34,29 @@ public class CartController {
 		return ResponseEntity.ok(cartService.getAllCartItems(customerId));
 	}
 	
-	@PostMapping("/add")
-	public ResponseEntity<Map<String,String>> addItem(@RequestBody CartRequest request){
+	@PostMapping("/{customerId}")
+	public ResponseEntity<Map<String,String>> addItem(@PathVariable int customerId, @RequestBody CartRequest request){
 		Map<String,String> response = new HashMap<>();
-		response.put("message", cartService.addItems(request));
+		response.put("message", cartService.addItems(customerId,request));
 		return ResponseEntity.ok(response);
 	}
 	
-	@GetMapping("/product")
-	public ResponseEntity<CartResponse> getItem(@RequestBody CartRequest request){
-		return ResponseEntity.ok(cartService.getCartItem(request));
+	@GetMapping("/{customerId}/product")
+	public ResponseEntity<CartResponse> getItem(@PathVariable int customerId,@RequestBody CartRequest request){
+		return ResponseEntity.ok(cartService.getCartItem(customerId,request));
 	}
 	
-	@PutMapping("/update")
-	public ResponseEntity<Map<String,String>> updateItem(@RequestBody CartRequest request){
+	@PutMapping("/{customerId}")
+	public ResponseEntity<Map<String,String>> updateItem(@PathVariable int customerId,@RequestBody CartRequest request){
 		Map<String,String> response = new HashMap<>();
-		response.put("message", cartService.updateCartItem(request));
+		response.put("message", cartService.updateCartItem(customerId,request));
 		return ResponseEntity.ok(response);
 	}
 	
-	@DeleteMapping("/remove")
-	public ResponseEntity<Map<String,String>> removeItem(@RequestBody CartRequest request){
+	@DeleteMapping("/{customerId}/product")
+	public ResponseEntity<Map<String,String>> removeItem(@PathVariable int customerId,@RequestBody CartRequest request){
 		Map<String,String> response = new HashMap<>();
-		response.put("message", cartService.removeCartItem(request));
+		response.put("message", cartService.removeCartItem(customerId,request));
 		return ResponseEntity.ok(response);
 	}
 	
