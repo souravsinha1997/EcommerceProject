@@ -3,9 +3,14 @@ EcommerceProject
 Overview
 This project is a comprehensive e-commerce platform designed to handle various aspects of online shopping, including user management, product catalog, cart operations, order processing, payment handling, and notifications. It follows a microservices architecture to ensure scalability and maintainability.
 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 Architecture
 
 The application is structured into several microservices:
+
 cart-service: Manages shopping cart functionalities.
 
 config-server: Centralized configuration management for all services.
@@ -25,6 +30,11 @@ payment-service: Handles payment transactions.
 product_service: Manages product listings and inventory.
 
 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 API Documentation
 
 API documentation for the services is available in the following directories:
@@ -38,9 +48,20 @@ API_Documentation_ProductService
 These documents provide detailed information about the available endpoints, request/response formats, and usage examples.
 
 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 Database Queries
 
 The DatabaseQueries directory contains SQL scripts and queries related to the database operations of the application.
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -62,6 +83,17 @@ For each service (cart-service, customer-service, notification-service, order-se
 
 
 Ensure that each service is configured correctly and connected to the appropriate databases.
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 Technologies Used
 
