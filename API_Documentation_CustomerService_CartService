@@ -3,24 +3,22 @@ CART-SERVICE:
 #####################################################################################################################
 
 1>
-URL: /api/cart/update
+URL: /api/cart/{customerId}
 Method: PUT
 Desc: Update the existing items in the cart
 Request body: 
 {
-  "customerId": 8,
   "productId": 2,
   "quantity": 2
 }
 Response: "Cart updated successfully"
 
 2>
-URL: /api/cart/add
+URL: /api/cart/{customerId}
 Method: POST
 Desc: Add items in the cart
 Request body: 
 {
-  "customerId": 8,
   "productId": 2,
   "quantity": 1
 }
@@ -55,13 +53,12 @@ Response:
 
 
 5>
-URL: /api/cart/product
+URL: /api/cart/{customerId}/product
 Method: GET
 Desc: fetches a specific product from the cart
 Request body: 
 {
-  "customerId": 8,
-  "productId": 1,
+  "productId": 3,
 }
 Response: 
 {
@@ -78,12 +75,11 @@ Response:
 
 
 6>
-URL: /api/cart/remove
+URL: /api/cart/{customerId}/product
 Method: DELETE
 Desc: Deletes a specific product from the cart
 Request body:
 {
-  "customerId": 8,
   "productId": 2,
 }
 Response:
