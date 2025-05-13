@@ -6,7 +6,6 @@ This project is a comprehensive e-commerce platform designed to handle various a
 Architecture
 
 The application is structured into several microservices:
-
 cart-service: Manages shopping cart functionalities.
 
 config-server: Centralized configuration management for all services.
