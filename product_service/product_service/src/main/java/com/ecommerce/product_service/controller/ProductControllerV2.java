@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -21,20 +22,20 @@ import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.service.ProductService;
 
 @RestController
-@RequestMapping("/api/products")
-public class ProductController {
+@RequestMapping("/api/v2/products")
+public class ProductControllerV2 {
 
 	private final ProductService productService;
 	
-	public ProductController(ProductService productService) {
+	public ProductControllerV2(ProductService productService) {
 		this.productService = productService;
 	}
 	
 	
-	@GetMapping("/all")
-	public ResponseEntity<List<ProductResponse>> getAllProducts(){
-		return ResponseEntity.ok(productService.getAllProducts());
-	}
+//	@GetMapping
+//	public ResponseEntity<List<ProductResponse>> getAllProducts(){
+//		return ResponseEntity.ok(productService.getAllProducts());
+//	}
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<ProductResponse> getProduct(@PathVariable int id){
@@ -42,9 +43,12 @@ public class ProductController {
 		//throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Simulated failure from Product Service");
 	}
 	
-	@GetMapping("/product/{name}")
-	public ResponseEntity<ProductResponse> getProductByName(@PathVariable String name){
-		return ResponseEntity.ok(productService.getProductByName(name));
+	@GetMapping
+	public ResponseEntity<?> getProductByName(@RequestParam(required = false) String name){
+		if(name!=null && !name.isEmpty())
+			return ResponseEntity.ok(productService.getProductByName(name));
+		else 
+			return ResponseEntity.ok(productService.getAllProducts());
 	}
 	
 	@GetMapping("/category/{category}")
@@ -52,25 +56,7 @@ public class ProductController {
 		return ResponseEntity.ok(productService.getProductByCategory(category));
 	}
 	
-	@PreAuthorize("hasAuthority('ADMIN')")
-	@PostMapping("/admin/product")
-	public ResponseEntity<MessageResponse> createProduct(@RequestBody ProductRequest request){
-		return ResponseEntity.ok(new MessageResponse(productService.createProduct(request)));
-	}
-	
-	@PreAuthorize("hasAuthority('ADMIN')")
-	@DeleteMapping("/admin/product/{id}")
-	public ResponseEntity<MessageResponse> deleteProduct(@PathVariable int id){
-		return ResponseEntity.ok(new MessageResponse(productService.deleteProduct(id)));
-	}
-	
-	@PreAuthorize("hasAuthority('ADMIN')")
-	@PutMapping("/admin/product/{id}")
-	public ResponseEntity<ProductResponse> updateProduct(@RequestBody ProductRequest request, @PathVariable int id){
-		return ResponseEntity.ok(productService.updateProduct(request, id));
-	}
-	
-	@PutMapping("/stock-update/{id}")
+	@PutMapping("/{id}")
 	public ResponseEntity<ProductResponse> updateStock(@RequestBody ProductRequest request, @PathVariable int id){
 		return ResponseEntity.ok(productService.updateProduct(request, id));
 	}

@@ -30,12 +30,15 @@ public class SecurityConfig {
 	                .csrf(csrf -> csrf.disable())
 	                .authorizeHttpRequests(req -> req
 	                        .requestMatchers("/api/products", "/api/products/{id}","/api/products/stock-update/{id}").permitAll()
+	                        .requestMatchers("/api/v2/categories/**").permitAll()
+	                        .requestMatchers("/api/v2/products/**").permitAll()
 	                        .requestMatchers("/api/categories","/api/categories/{id}").permitAll()
 	                        .requestMatchers(
 	                                "/v3/api-docs/**",
 	                                "/swagger-ui/**",
 	                                "/swagger-ui.html"
 	                            ).permitAll()
+	                        .requestMatchers("/api/v2/admin/**").hasRole("ADMIN")
 	                        .requestMatchers("/api/products/admin/**","/api/categories/admin/**").hasRole("ADMIN")
 	                        .anyRequest().authenticated()
 	                )
